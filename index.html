@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <title>healthQL</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #5bc985;
+      --green-dark: #28a85f;
+      --green-light: #d1fae5;
+      --panel: #2ebd6a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #f7fdf9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Layout ── */
+    .app-grid {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      min-height: 100vh;
+    }
+
+    @media (max-width: 768px) {
+      .app-grid { grid-template-columns: 1fr; }
+      .panel-right { order: 2; }
+      .panel-left  { order: 1; }
+    }
+
+    /* ── Left panel ── */
+    .panel-left {
+      background: var(--green);
+      padding: 2.5rem 2rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel-left::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 260px; height: 260px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      pointer-events: none;
+    }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+
+    .tagline {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.85);
+      font-weight: 300;
+      margin-top: 0.25rem;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Mode selector ── */
+    .mode-block { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .mode-option {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      cursor: pointer;
+    }
+
+    .mode-option input[type="radio"] { display: none; }
+
+    .radio-circle {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 2.5px solid rgba(255,255,255,0.7);
+      background: transparent;
+      flex-shrink: 0;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .mode-option input:checked + .radio-circle {
+      background: #fff;
+      border-color: #fff;
+    }
+
+    .mode-option input:checked + .radio-circle::after {
+      content: '';
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .mode-label {
+      font-size: 0.9rem;
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .mode-ou {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Ingredient tags ── */
+    .ingredients-block { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .tag-zone {
+      background: rgba(255,255,255,0.15);
+      border: 1.5px solid rgba(255,255,255,0.35);
+      border-radius: 12px;
+      padding: 0.6rem 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      min-height: 48px;
+      align-items: center;
+      cursor: text;
+      transition: border-color 0.2s;
+    }
+
+    .tag-zone:focus-within {
+      border-color: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.2);
+    }
+
+    .tag {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(255,255,255,0.92);
+      color: var(--green-dark);
+      border-radius: 20px;
+      padding: 0.2rem 0.65rem 0.2rem 0.5rem;
+      font-size: 0.82rem;
+      font-weight: 500;
+      animation: tagIn 0.18s ease;
+    }
+
+    @keyframes tagIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+
+    .tag-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+
+    .tag-remove {
+      cursor: pointer;
+      color: var(--green-dark);
+      font-size: 0.75rem;
+      line-height: 1;
+      opacity: 0.6;
+      transition: opacity 0.15s;
+      background: none; border: none;
+      padding: 0; margin-left: 2px;
+    }
+    .tag-remove:hover { opacity: 1; }
+
+    .tag-input {
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      min-width: 120px;
+      flex: 1;
+    }
+
+    .tag-input::placeholder { color: rgba(255,255,255,0.55); }
+
+    .tag-hint {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.55);
+      padding-left: 0.25rem;
+    }
+
+    /* ── Regime ── */
+    .regime-block { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .regime-title {
+      font-size: 0.78rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .checkboxes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.35rem 0.75rem;
+    }
+
+    .check-option {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+
+    .check-option input[type="checkbox"] { display: none; }
+
+    .check-box {
+      width: 18px; height: 18px;
+      border-radius: 4px;
+      border: 2px solid rgba(255,255,255,0.55);
+      background: transparent;
+      flex-shrink: 0;
+      transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .check-option input:checked + .check-box {
+      background: #fff;
+      border-color: #fff;
+    }
+
+    .check-option input:checked + .check-box::after {
+      content: '✓';
+      font-size: 11px;
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .check-label {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.9);
+    }
+
+    /* ── Search button ── */
+    .btn-search {
+      background: #fff;
+      color: var(--green-dark);
+      border: none;
+      border-radius: 12px;
+      padding: 0.85rem 1.5rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+      width: 100%;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-search:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+
+    .btn-search:active { transform: translateY(0); }
+
+    /* ── Right panel ── */
+    .panel-right {
+      background: #f7fdf9;
+      padding: 2.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .results-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #1a3a26;
+      letter-spacing: -0.3px;
+    }
+
+    /* ── Recipe grid ── */
+    .recipes-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 500px) {
+      .recipes-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Recipe card ── */
+    .recipe-card {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      text-decoration: none;
+      box-shadow: 0 2px 10px rgba(46,189,94,0.08);
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: block;
+      border: 1px solid rgba(62,207,110,0.12);
+    }
+
+    .recipe-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 28px rgba(46,189,94,0.18);
+    }
+
+    .recipe-img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      background: #e8f5ee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .recipe-img-placeholder {
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .recipe-img-placeholder svg {
+      width: 40px; height: 40px;
+      opacity: 0.35;
+      color: var(--green-dark);
+    }
+
+    .recipe-info {
+      padding: 0.85rem 1rem;
+    }
+
+    .recipe-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1a3a26;
+      margin-bottom: 0.3rem;
+      line-height: 1.3;
+    }
+
+    .recipe-type {
+      font-size: 0.75rem;
+      color: var(--green-dark);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 0.75rem;
+      color: #9dbfa9;
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+
+    .empty-state svg { width: 48px; height: 48px; opacity: 0.4; }
+    .empty-state p { font-size: 0.9rem; max-width: 220px; line-height: 1.5; }
+
+    /* ── Footer ── */
+    .footer-link {
+      font-size: 0.78rem;
+      color: #9dbfa9;
+      text-decoration: none;
+      margin-top: auto;
+      transition: color 0.15s;
+    }
+    .footer-link:hover { color: var(--green-dark); }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.2);
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-grid">
+
+  <!-- ════ LEFT PANEL ════ -->
+  <aside class="panel-left">
+
+    <!-- Logo -->
+    <div>
+      <div class="logo">healthQL</div>
+      <div class="tagline">des données au service d'une alimentation équilibrée</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Mode -->
+    <div class="mode-block">
+      <label class="mode-option">
+        <input type="radio" name="mode" value="inclure" checked />
+        <span class="radio-circle"></span>
+        <span class="mode-label">inclure les aliments dans la recette</span>
+      </label>
+
+      <div class="mode-ou">ou</div>
+
+      <label class="mode-option">
+        <input type="radio" name="mode" value="completer" />
+        <span class="radio-circle"></span>
+        <span class="mode-label">trouver une recette en complément de ces aliments</span>
+      </label>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Ingredients -->
+    <div class="ingredients-block">
+      <div class="tag-zone" id="tagZone" onclick="focusInput()">
+        <input
+          class="tag-input"
+          id="tagInput"
+          type="text"
+          placeholder="Ajouter un aliment…"
+          maxlength="40"
+          autocomplete="off"
+        />
+      </div>
+      <div class="tag-hint" id="tagHint">Appuyez sur Entrée pour ajouter · max 5 aliments</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Regime -->
+    <div class="regime-block">
+      <div class="regime-title">régime alimentaire</div>
+      <div class="checkboxes">
+        <label class="check-option">
+          <input type="checkbox" name="regime" value="vegan" />
+          <span class="check-box"></span>
+          <span class="check-label">vegan</span>
+        </label>
+        <label class="check-option">
+          <input type="checkbox" name="regime" value="vegetarien" />
+          <span class="check-box"></span>
+          <span class="check-label">végétarien</span>
+        </label>
+        <label class="check-option">
+          <input type="checkbox" name="regime" value="musulman" />
+          <span class="check-box"></span>
+          <span class="check-label">halal</span>
+        </label>
+        <label class="check-option">
+          <input type="checkbox" name="regime" value="sans_lactose" />
+          <span class="check-box"></span>
+          <span class="check-label">sans lactose</span>
+        </label>
+        <label class="check-option">
+          <input type="checkbox" name="regime" value="sans_gluten" />
+          <span class="check-box"></span>
+          <span class="check-label">vegan</span>
+        </label>
+        <label class="check-option">
+          <input type="checkbox" name="regime" value="sans_fruits_mer" />
+          <span class="check-box"></span>
+          <span class="check-label">sans fruits de mer</span>
+        </label>
+        <label class="check-option">
+          <input type="checkbox" name="regime" value="sans_fruits_coque" />
+          <span class="check-box"></span>
+          <span class="check-label">sans fruits à coque</span>
+        </label>
+      </div>
+    </div>
+
+    <button class="btn-search" onclick="search()">Trouver des recettes</button>
+
+  </aside>
+
+  <!-- ════ RIGHT PANEL ════ -->
+  <main class="panel-right">
+
+    <div class="results-title">les recettes pour vous</div>
+
+    <!-- Empty state (affiché par défaut) -->
+    <div class="empty-state" id="emptyState">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/>
+        <path d="M8 12h8M12 8v8"/>
+      </svg>
+      <p>Ajoutez des aliments et lancez la recherche pour découvrir des recettes</p>
+    </div>
+
+    <!-- Grille de recettes (cachée par défaut) -->
+    <div class="recipes-grid" id="recipesGrid" style="display:none;"></div>
+
+    <a href="https://mkdir-lucile.github.io" class="footer-link" id="aboutLink">à propos de la créatrice</a>
+
+  </main>
+
+</div>
+
+<script>
+    const { createClient } = supabase
+    const db = createClient(
+  'https://ixptnjuvdzbxstauyvnc.supabase.co/rest/v1/',  
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4cHRuanV2ZHpieHN0YXV5dm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNDQ1OTQsImV4cCI6MjA5MzkyMDU5NH0.ouWlmgh8czuY2POIL_c99SENqf5x5cZXzfL3e1XlngA'                     )
+
+
+  // ── Tag system ──
+  const MAX_TAGS = 5;
+  let tags = [];
+
+  const tagZone  = document.getElementById('tagZone');
+  const tagInput = document.getElementById('tagInput');
+  const tagHint  = document.getElementById('tagHint');
+
+  function focusInput() { tagInput.focus(); }
+
+  function renderTags() {
+    // Supprimer les tags existants
+    tagZone.querySelectorAll('.tag').forEach(t => t.remove());
+
+    tags.forEach((name, i) => {
+      const tag = document.createElement('div');
+      tag.className = 'tag';
+      tag.innerHTML = `
+        <span class="tag-dot"></span>
+        <span>${name}</span>
+        <button class="tag-remove" onclick="removeTag(${i})" aria-label="Supprimer ${name}">×</button>
+      `;
+      tagZone.insertBefore(tag, tagInput);
+    });
+
+    // Cacher/montrer l'input selon le max
+    tagInput.style.display = tags.length >= MAX_TAGS ? 'none' : '';
+    tagHint.textContent = tags.length >= MAX_TAGS
+      ? 'Maximum de 5 aliments atteint'
+      : `Appuyez sur Entrée pour ajouter · ${MAX_TAGS - tags.length} restant${MAX_TAGS - tags.length > 1 ? 's' : ''}`;
+  }
+
+  function addTag(value) {
+    const name = value.trim().toLowerCase();
+    if (!name || tags.length >= MAX_TAGS || tags.includes(name)) return;
+    tags.push(name);
+    tagInput.value = '';
+    renderTags();
+  }
+
+  function removeTag(i) {
+    tags.splice(i, 1);
+    renderTags();
+  }
+
+  tagInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag(tagInput.value);
+    }
+    if (e.key === 'Backspace' && tagInput.value === '' && tags.length > 0) {
+      removeTag(tags.length - 1);
+    }
+  });
+
+  // ── Search (placeholder — à connecter à Supabase) ──
+  function search() {
+    const mode    = document.querySelector('input[name="mode"]:checked').value;
+    const regimes = [...document.querySelectorAll('input[name="regime"]:checked')].map(el => el.value);
+
+    if (tags.length === 0) {
+      tagInput.placeholder = 'Ajoutez au moins un aliment…';
+      tagZone.style.borderColor = 'rgba(255,255,255,0.9)';
+      focusInput();
+      return;
+    }
+
+    console.log('Recherche :', { tags, mode, regimes });
+
+    // ── Afficher des cartes placeholder ──
+    showPlaceholderCards();
+  }
+
+  function showPlaceholderCards() {
+    const grid  = document.getElementById('recipesGrid');
+    const empty = document.getElementById('emptyState');
+
+    const exemples = [
+      { nom: 'Tarte aux légumes',       type: 'Cuisine française' },
+      { nom: 'Buddha bowl printanier',  type: 'Cuisine healthy'   },
+      { nom: 'Gratin dauphinois léger', type: 'Cuisine française' },
+      { nom: 'Wrap méditerranéen',      type: 'Cuisine du monde'  },
+    ];
+
+    grid.innerHTML = exemples.map(r => `
+      <a href="#" class="recipe-card">
+        <div class="recipe-img-placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="M21 15l-5-5L5 21"/>
+          </svg>
+        </div>
+        <div class="recipe-info">
+          <div class="recipe-name">${r.nom}</div>
+          <div class="recipe-type">${r.type}</div>
+        </div>
+      </a>
+    `).join('');
+
+    empty.style.display = 'none';
+    grid.style.display  = 'grid';
+  }
+</script>
+
+</body>
+</html>
