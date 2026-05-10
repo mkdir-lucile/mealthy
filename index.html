@@ -577,8 +577,6 @@ grid.innerHTML = '<div class="loading"><div class="spinner"></div>recherche en c
     )
     `)
 
-console.log(data, error)
-
   if (regimes.includes('vegan'))        requete = requete.eq('est_vegan', true)
   if (regimes.includes('halal'))        requete = requete.eq('est_halal', true)
   if (regimes.includes('sans lactose')) requete = requete.eq('est_sans_lactose', true)
