@@ -1,18 +1,18 @@
-id,nom,lien,type
-1,chow mein,https://ramekin.fr/recette/chow-mein/,chinoise
-2,velouté de radis roses,https://www.notparisienne.fr/soupes/veloute-de-radis-roses/,française
-3,hernekeitto,https://www.notparisienne.fr/soupes/specialite-de-finlande-hernekeitto-soupe-aux-pois-casses/,finlandaise
-4,"crème verte de brocolis, épinards et citron",https://www.notparisienne.fr/soupes/creme-verte-de-brocolis-epinards-et-citron/,française
-5,"soupe de carottes, potimarron et lait d’amande",https://www.notparisienne.fr/soupes/soupe-de-carottes-potimarron-et-lait-damande/#zrdn-recipe-container,française
-6,lasagnes courge épinards chèvre,https://www.adeline-cuisine.fr/recette/lasagnes-courge-epinards-chevre/,française
-7,,,
-8,,,
-9,,,
-10,,,
-11,,,
-12,,,
-13,,,
-14,,,
-15,,,
-16,,,
-17,,,
+id,nom,lien,type,est_vegan,est_halal,est_sans_lactose
+1,chow mein,https://ramekin.fr/recette/chow-mein/,chinoise,false,true,true
+2,velouté de radis roses,https://www.notparisienne.fr/soupes/veloute-de-radis-roses/,française,true,true,true
+3,hernekeitto,https://www.notparisienne.fr/soupes/specialite-de-finlande-hernekeitto-soupe-aux-pois-casses/,finlandaise,true,true,true
+4,"crème verte de brocolis, épinards et citron",https://www.notparisienne.fr/soupes/creme-verte-de-brocolis-epinards-et-citron/,française,true,true,true
+5,"soupe de carottes, potimarron et lait d’amande",https://www.notparisienne.fr/soupes/soupe-de-carottes-potimarron-et-lait-damande/#zrdn-recipe-container,française,true,true,true
+6,lasagnes courge épinards chèvre,https://www.adeline-cuisine.fr/recette/lasagnes-courge-epinards-chevre/,française,false,true,false
+7,,,,,,
+8,,,,,,
+9,,,,,,
+10,,,,,,
+11,,,,,,
+12,,,,,,
+13,,,,,,
+14,,,,,,
+15,,,,,,
+16,,,,,,
+17,,,,,,

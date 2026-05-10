@@ -406,6 +406,9 @@ html,body{
   .recipes-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:20px;}
 }
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
 </head>
 <body>
 
@@ -493,6 +496,12 @@ html,body{
 </div>
 
 <script>
+const { createClient } = supabase
+const db = createClient(
+  'https://ixptnjuvdzbxstauyvnc.supabase.co/rest/v1/',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4cHRuanV2ZHpieHN0YXV5dm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNDQ1OTQsImV4cCI6MjA5MzkyMDU5NH0.ouWlmgh8czuY2POIL_c99SENqf5x5cZXzfL3e1XlngA'
+)
+
 const CLIP_ROUND = "pin.png"
 const CLIP_BINDER = "clipboard1.png"
 const CLIPS = [CLIP_BINDER, CLIP_ROUND, CLIP_BINDER, CLIP_ROUND, CLIP_BINDER, CLIP_ROUND];
@@ -526,7 +535,7 @@ function addIngredient(){
   const val = inp.value.trim().toLowerCase();
   if(!val){ inp.value=''; return; }
   if(ingredients.length >= 5){ showToast('5 aliments maximum'); return; }
-  if(ingredients.includes(val)){ inp.value=''; showToast('Déjà dans le panier'); return; }
+  if(ingredients.includes(val)){ inp.value=''; showToast('déjà dans le panier'); return; }
   ingredients.push(val);
   inp.value = '';
   renderTags();
@@ -549,52 +558,38 @@ function renderTags(){
     c.appendChild(t);
   });
 }
+async function searchRecipes() {
+const btn  = document.getElementById('searchBtn')
+const grid = document.getElementById('recipesGrid')
+btn.disabled = true
+grid.innerHTML = '<div class="loading"><div class="spinner"></div>recherche en cours…</div>'
+  if (!ingredients.length) { showToast('ajoutez au moins un aliment'); return; }
 
-async function searchRecipes(){
-  if(!ingredients.length){ showToast('Ajoutez au moins un aliment'); return; }
-  const regimes = [];
-  ['vegan','halal','lactose'].forEach(id => { const el=document.getElementById(id); if(el.checked) regimes.push(el.value); });
-  const btn   = document.getElementById('searchBtn');
-  const grid  = document.getElementById('recipesGrid');
-  const title = document.getElementById('recipesTitle');
-  btn.disabled = true;
-  grid.innerHTML = '<div class="loading"><div class="spinner"></div>Recherche en cours…</div>';
-  title.textContent = 'les recettes pour vous';
+  const mode = document.querySelector('input[name="mode"]:checked').value
+  const regimes = [...document.querySelectorAll('input.regime-opt:checked')].map(elt => elt.value)
 
-  const modeText = mode==='include'
-    ? 'Propose des recettes qui contiennent ces ingrédients : ' + ingredients.join(', ') + '.'
-    : 'Propose des recettes à préparer en complément de ces aliments : ' + ingredients.join(', ') + '.';
-  const regimeText = regimes.length ? ' Régime : ' + regimes.join(', ') + '.' : '';
+  let requete = db
+    .from('recettes')
+    .select(`nom, lien, type, est_vegan, est_halal, est_sans_lactose, fusion( aliment( nom ) )`)
 
-  const prompt = `Tu es un assistant culinaire. ${modeText}${regimeText}
-Propose exactement 6 recettes.
-Réponds UNIQUEMENT en JSON valide, sans backticks ni markdown :
-[{"nom":"...","type":"...","lien":"...","photo":"..."}]
-- "nom" : nom court en français
-- "type" : catégorie courte (ex: végétarien, rapide, méditerranéen…)
-- "lien" : URL d'une vraie recette sur marmiton.org, 750g.com, cuisineactuelle.fr ou hervecuisine.com
-- "photo" : URL directe d'une image libre de droits du plat (unsplash.com ou similar), ou chaîne vide si tu n'en as pas`;
+  if (regimes.includes('vegan'))        requete = requete.eq('est_vegan', true)
+  if (regimes.includes('halal'))        requete = requete.eq('est_halal', true)
+  if (regimes.includes('sans lactose')) requete = requete.eq('est_sans_lactose', true)
 
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1200,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    const data = await res.json();
-    const raw   = (data.content||[]).map(b=>b.text||'').join('');
-    const clean = raw.replace(/```json|```/g,'').trim();
-    const recipes = JSON.parse(clean);
-    renderRecipes(recipes);
-  } catch(err) {
-    console.error(err);
-    grid.innerHTML = '<div class="empty-state"><div class="empty-text">Erreur lors de la recherche.<br>Réessayez dans un instant.</div></div>';
+  const { data, error } = await requete
+
+  if (error) { console.error(error); return; }
+
+  const resultats = data.filter(recette => {
+    const nomsAliments = recette.fusion.map(f => f.aliment.nom)
+    return ingredients.every(ing => nomsAliments.includes(ing))
+  })
+  if (resultats.length === 0) {
+  grid.innerHTML = '<div class="empty-state"><div class="empty-text">aucune recette trouvée<br>essayez d\'autres aliments</div></div>'
+  return
   }
-  btn.disabled = false;
+  renderRecipes(resultats)
+  btn.disabled = false
 }
 
 function renderRecipes(recipes){
