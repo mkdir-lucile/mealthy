@@ -498,7 +498,7 @@ html,body{
 <script>
 const { createClient } = supabase
 const db = createClient(
-  'https://ixptnjuvdzbxstauyvnc.supabase.co/rest/v1/',
+  'https://ixptnjuvdzbxstauyvnc.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4cHRuanV2ZHpieHN0YXV5dm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNDQ1OTQsImV4cCI6MjA5MzkyMDU5NH0.ouWlmgh8czuY2POIL_c99SENqf5x5cZXzfL3e1XlngA'
 )
 
@@ -559,7 +559,7 @@ function renderTags(){
   });
 }
 async function searchRecipes() {
-/* const btn  = document.getElementById('searchBtn')
+const btn  = document.getElementById('searchBtn')
 const grid = document.getElementById('recipesGrid')
 btn.disabled = true
 grid.innerHTML = '<div class="loading"><div class="spinner"></div>recherche en cours…</div>'
@@ -583,15 +583,11 @@ console.log(data, error)
   if (regimes.includes('halal'))        requete = requete.eq('est_halal', true)
   if (regimes.includes('sans lactose')) requete = requete.eq('est_sans_lactose', true)
 
-  const { data, error } = await requete */
-
-  const { data, error } = await db
-  .from('recettes')
-  .select('id, nom')
+  const { data, error } = await requete
 
   if (error) { console.error(error); return; }
 
-  /* const resultats = data.filter(recette => {
+  const resultats = data.filter(recette => {
     const nomsAliments = recette.fusion.map(f => f.aliment.nom)
     return ingredients.every(ing => nomsAliments.includes(ing))
   })
@@ -599,8 +595,7 @@ console.log(data, error)
   grid.innerHTML = '<div class="empty-state"><div class="empty-text">aucune recette trouvée<br>essayez d\'autres aliments</div></div>'
   return
   }
-  renderRecipes(resultats) */
-  renderRecipes(data)
+  renderRecipes(resultats)
   btn.disabled = false
 }
 
