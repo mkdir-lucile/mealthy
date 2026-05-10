@@ -25,7 +25,7 @@ html,body{
 
 .split{
   display:grid;
-  grid-template-columns: 480px 1fr;
+  grid-template-columns: 580px 1fr;
   min-height:100vh;
 }
 
@@ -570,7 +570,12 @@ grid.innerHTML = '<div class="loading"><div class="spinner"></div>recherche en c
 
   let requete = db
     .from('recettes')
-    .select(`id,nom, lien, type, est_vegan, est_halal, est_sans_lactose, fusion( aliment( nom ) )`)
+    .select(`
+    id, nom, lien, type, est_vegan, est_halal, est_sans_lactose,
+    fusion!fusion_recette_fkey (
+    aliment!fusion_aliment_fkey ( nom )
+    )
+    `)
 
   if (regimes.includes('vegan'))        requete = requete.eq('est_vegan', true)
   if (regimes.includes('halal'))        requete = requete.eq('est_halal', true)
