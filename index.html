@@ -573,7 +573,7 @@ grid.innerHTML = '<div class="loading"><div class="spinner"></div>recherche en c
     .select(`
     id, nom, lien, type, est_vegan, est_halal, est_sans_lactose,
     fusion!fusion_recette_fkey (
-    aliment!fusion_aliment_fkey ( nom )
+    aliments!fusion_aliment_fkey ( nom )
     )
     `)
 
@@ -586,7 +586,7 @@ grid.innerHTML = '<div class="loading"><div class="spinner"></div>recherche en c
   if (error) { console.error(error); return; }
 
   const resultats = data.filter(recette => {
-    const nomsAliments = recette.fusion.map(f => f.aliment.nom)
+    const nomsAliments = recette.fusion.map(f => f.aliments.nom)
     return ingredients.every(ing => nomsAliments.includes(ing))
   })
   if (resultats.length === 0) {
