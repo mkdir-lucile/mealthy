@@ -1,6 +1,20 @@
 id,nom,categorie
-1,nouilles,féculent
+1,nouille,féculent
 2,riz,féculent
 3,porc,viande
 4,poulet,viande
 5,lentilles,légumineuse
+6,radis,légume
+7,pomme de terre,féculent
+8,oignon,légume
+9,crème,lait
+10,pois,légumineuse
+11,brocoli,légume
+12,épinard,légume
+13,citron,fruit
+14,lait d’amande,gras
+15,carotte,légume
+16,potimarron,légume
+17,lasagne,féculent
+18,courge,légume
+19,chèvre,lait
